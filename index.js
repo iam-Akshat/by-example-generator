@@ -1,7 +1,8 @@
 const fs = require("fs");
 
 const genHtml = require("./genHtml");
-const fileText = `
+const { parseCodeFromComment } = require("./util");
+const sampleText = `
 // In Go, an _array_ is a numbered sequence of elements of a
 // specific length. In typical Go code, [slices](slices) are
 // much more common; arrays are useful in some special
@@ -56,6 +57,9 @@ const isLineCode = (line) => {
 const isLineEmpty = (line) => {
   return line.trim().length === 0;
 };
+const checkCodeEmpty = (code, markup = `<pre><code class="language-go"></code></pre>`) => {
+  return code === markup;
+}
 
 const parseText = (text) => {
   const lines = text.split("\n");
@@ -69,30 +73,33 @@ const parseText = (text) => {
   let rowMarkup = `<tr>\n`;
   while (codeIndex < lines.length) {
     if (isLineEmpty(lines[codeIndex])) {
-        code += "</code></pre>";
-        comment += "</pre>";
-      rowMarkup += `<td>${comment}</td><td>${code}</td> </tr>\n`;
+      code += "</code></pre>";
+      comment += "</p>";
+
+      rowMarkup += `<td class="docs">${parseCodeFromComment(
+        comment
+      )}</td><td class="code ${checkCodeEmpty(code) ? 'empty': ''}">${code}</td> </tr>\n`;
 
       html += rowMarkup;
       codeIndex++;
       comment = "<p>";
       code = `<pre><code class="language-go">`;
-      rowMarkup = `<tr>\n`
+      rowMarkup = `<tr>\n`;
     } else if (isLineComment(lines[codeIndex])) {
       comment += lines[codeIndex]
         .replaceAll("//", "")
-        .replaceAll("/(`\w*`)/g", "<code>$1</code>")
+        .replaceAll("/(`w*`)/g", "<code>$1</code>")
         .trim();
-        comment += "\n";
+      comment += "\n";
       codeIndex++;
     } else if (isLineCode(lines[codeIndex])) {
-      code += lines[codeIndex].replaceAll("\t", "&nbsp;&nbsp;");
+      code += lines[codeIndex].replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
       code += "\n";
       codeIndex++;
     }
   }
   html += `</table>`;
-  
+
   console.log(
     `isLineCountMatching`,
     commentLines.length + codeLines.length === lines.length,
@@ -100,9 +107,7 @@ const parseText = (text) => {
   );
   return html;
 };
-const html = parseText(fileText);
+const html = parseText(sampleText);
 const markup = genHtml(html);
 
 fs.writeFileSync("./index.html", markup);
-
-
