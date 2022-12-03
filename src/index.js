@@ -1,145 +1,85 @@
+#!/usr/bin/env node
+
 const fs = require("fs");
+const fsp = require("fs").promises;
 
 const genHtml = require("./genHtml");
-const { parseCodeFromComment } = require("./util");
-const sampleText = `
-// _Slices_ are an important data type in Go, giving
-// a more powerful interface to sequences than arrays.
+const {
+  isLineCode,
+  isLineComment,
+  isLineEmpty,
+  genRowMarkup,
+} = require("./util");
+const { makeContentTree } = require("./readData");
+const path = require("path");
 
-package main
-
-import "fmt"
-
-func main() {
-
-	// Unlike arrays, slices are typed only by the
-	// elements they contain (not the number of elements).
-	// To create an empty slice with non-zero length, use
-	// the builtin \`make\`. Here we make a slice of
-	// \`string\`s of length \`3\` (initially zero-valued).
-	s := make([]string, 3)
-	fmt.Println("emp:", s)
-
-	// We can set and get just like with arrays.
-	s[0] = "a"
-	s[1] = "b"
-	s[2] = "c"
-	fmt.Println("set:", s)
-	fmt.Println("get:", s[2])
-
-	// \`len\` returns the length of the slice as expected.
-	fmt.Println("len:", len(s))
-
-	// In addition to these basic operations, slices
-	// support several more that make them richer than
-	// arrays. One is the builtin \`append\`, which
-	// returns a slice containing one or more new values.
-	// Note that we need to accept a return value from
-	// \`append\` as we may get a new slice value.
-	s = append(s, "d")
-	s = append(s, "e", "f")
-	fmt.Println("apd:", s)
-
-	// Slices can also be \`copy\`'d. Here we create an
-	// empty slice \`c\` of the same length as \`s\` and copy
-	// into \`c\` from \`s\`.
-	c := make([]string, len(s))
-	copy(c, s)
-	fmt.Println("cpy:", c)
-
-	// Slices support a "slice" operator with the syntax
-	// \`slice[low:high]\`. For example, this gets a slice
-	// of the elements \`s[2]\`, \`s[3]\`, and \`s[4]\`.
-	l := s[2:5]
-	fmt.Println("sl1:", l)
-
-	// This slices up to (but excluding) \`s[5]\`.
-	l = s[:5]
-	fmt.Println("sl2:", l)
-
-	// And this slices up from (and including) \`s[2]\`.
-	l = s[2:]
-	fmt.Println("sl3:", l)
-
-	// We can declare and initialize a variable for slice
-	// in a single line as well.
-	t := []string{"g", "h", "i"}
-	fmt.Println("dcl:", t)
-
-	// Slices can be composed into multi-dimensional data
-	// structures. The length of the inner slices can
-	// vary, unlike with multi-dimensional arrays.
-	twoD := make([][]int, 3)
-	for i := 0; i < 3; i++ {
-		innerLen := i + 1
-		twoD[i] = make([]int, innerLen)
-		for j := 0; j < innerLen; j++ {
-			twoD[i][j] = i + j
-		}
-	}
-	fmt.Println("2d: ", twoD)
-}
-`;
-const isLineComment = (line) => {
-  return line.trim().startsWith("//");
-};
-const isLineCode = (line) => {
-  return !isLineComment(line);
-};
-const isLineEmpty = (line) => {
-  return line.trim().length === 0;
-};
-const checkCodeEmpty = (code, markup = `<pre><code class="language-go"></code></pre>`) => {
-  return code === markup;
-}
-
-const parseText = (text) => {
+const parseCodeFile = (text) => {
   const lines = text.split("\n");
-  const commentLines = lines.filter(isLineComment);
-  const codeLines = lines.filter(isLineCode);
 
   let html = `<table>\n`;
   let codeIndex = 0;
-  let comment = "<p>";
-  let code = `<pre><code class="language-go">`;
-  let rowMarkup = `<tr>\n`;
+  let comment = "";
+  let code = "";
   while (codeIndex < lines.length) {
     if (isLineEmpty(lines[codeIndex])) {
-      code += "</code></pre>";
-      comment += "</p>";
 
-      rowMarkup += `<td class="docs">${parseCodeFromComment(
-        comment
-      )}</td><td class="code ${checkCodeEmpty(code) ? 'empty': ''}">${code}</td> </tr>\n`;
+      const rowMarkup = genRowMarkup(comment, code);
 
       html += rowMarkup;
+
+      // resetting
+      comment = "";
+      code = "";
       codeIndex++;
-      comment = "<p>";
-      code = `<pre><code class="language-go">`;
-      rowMarkup = `<tr>\n`;
     } else if (isLineComment(lines[codeIndex])) {
+
       comment += lines[codeIndex]
         .replaceAll("//", "")
         .replaceAll("/(`w*`)/g", "<code>$1</code>")
         .trim();
       comment += "\n";
       codeIndex++;
+
     } else if (isLineCode(lines[codeIndex])) {
-      code += lines[codeIndex].replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
+
+      code += lines[codeIndex]
       code += "\n";
       codeIndex++;
+
     }
   }
   html += `</table>`;
 
-  console.log(
-    `isLineCountMatching`,
-    commentLines.length + codeLines.length === lines.length,
-    codeIndex
-  );
   return html;
 };
-const html = parseText(sampleText);
-const markup = genHtml(html);
 
-fs.writeFileSync("./index.html", markup);
+const createDir = async (dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+};
+
+const main = async () => {
+  const distPath = path.join(process.cwd(), "dist");
+  const staticPath = path.join(process.cwd(), "dist", "static");
+  createDir(distPath);
+  createDir(staticPath);
+  const contentTree = makeContentTree();
+
+  for (const [chapterName, chapterContent] of Object.entries(contentTree)) {
+    if (!chapterContent.content) {
+      console.log(`Skipping ${chapterName}`);
+      continue;
+    }
+    console.log(`Processing ${chapterName}`);
+    const chapterHtml = parseCodeFile(
+      await fsp.readFile(chapterContent.content, "utf-8")
+    );
+    const chapterMarkup = genHtml(chapterHtml);
+    const chapterPath = path.join(distPath, `${chapterName}.html`);
+    fs.writeFileSync(chapterPath, chapterMarkup);
+    await fsp.copyFile(path.join(__dirname, "static", "main.css"), path.join(staticPath, "main.css"));
+  }
+};
+
+main();

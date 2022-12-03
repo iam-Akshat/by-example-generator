@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="./prism.css">
+
+    
+<style>
+* {
+    margin: 0;
+    padding: 0;
+}
+td {
+    vertical-align: top;
+}
+td.docs {
+    padding-right: 1rem;
+}
+td.docs p {
+    padding-bottom: 0.8rem;
+    width: 420px;
+    font-family: Georgia, sans-serif;
+    font-size: 1rem;
+}
+td.code.empty {
+    background-color: transparent !important;
+}
+td.code{
+    background: #f5f2f0 !important;
+    padding-bottom: 15px;
+    padding-left: 5px;
+    padding-top: 5px;
+    width: 480px !important;
+    font-size: 14px !important;
+}
+
+table{
+    border-spacing: 0;
+}
+pre{
+    margin: 0 !important;
+    border: 0;
+    padding: 0 !important;
+}
+
+body{
+    display:flex;
+    justify-content: center;
+    align-items: center;
+} 
+
+</style>
+
+
+</head>
+
+<body>
+<table>
+<tr>
+<td class="docs"><p></p></td><td class="code empty"><pre><code class="language-go"></code></pre></td> </tr>
+<tr>
+<td class="docs"><p>_Slices_ are an important data type in Go, giving
+a more powerful interface to sequences than arrays.
+</p></td><td class="code empty"><pre><code class="language-go"></code></pre></td> </tr>
+<tr>
+<td class="docs"><p></p></td><td class="code "><pre><code class="language-go">package main
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p></p></td><td class="code "><pre><code class="language-go">import "fmt"
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p></p></td><td class="code "><pre><code class="language-go">func main() {
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>Unlike arrays, slices are typed only by the
+elements they contain (not the number of elements).
+To create an empty slice with non-zero length, use
+the builtin <code>make</code>. Here we make a slice of
+<code>string</code>s of length <code>3</code> (initially zero-valued).
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;s := make([]string, 3)
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("emp:", s)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>We can set and get just like with arrays.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;s[0] = "a"
+&nbsp;&nbsp;&nbsp;&nbsp;s[1] = "b"
+&nbsp;&nbsp;&nbsp;&nbsp;s[2] = "c"
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("set:", s)
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("get:", s[2])
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p><code>len</code> returns the length of the slice as expected.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("len:", len(s))
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>In addition to these basic operations, slices
+support several more that make them richer than
+arrays. One is the builtin <code>append</code>, which
+returns a slice containing one or more new values.
+Note that we need to accept a return value from
+<code>append</code> as we may get a new slice value.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;s = append(s, "d")
+&nbsp;&nbsp;&nbsp;&nbsp;s = append(s, "e", "f")
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("apd:", s)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>Slices can also be <code>copy</code>'d. Here we create an
+empty slice <code>c</code> of the same length as <code>s</code> and copy
+into <code>c</code> from <code>s</code>.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;c := make([]string, len(s))
+&nbsp;&nbsp;&nbsp;&nbsp;copy(c, s)
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("cpy:", c)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>Slices support a "slice" operator with the syntax
+<code>slice[low:high]</code>. For example, this gets a slice
+of the elements <code>s[2]</code>, <code>s[3]</code>, and <code>s[4]</code>.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;l := s[2:5]
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("sl1:", l)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>This slices up to (but excluding) <code>s[5]</code>.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;l = s[:5]
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("sl2:", l)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>And this slices up from (and including) <code>s[2]</code>.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;l = s[2:]
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("sl3:", l)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>We can declare and initialize a variable for slice
+in a single line as well.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;t := []string{"g", "h", "i"}
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("dcl:", t)
+</code></pre></td> </tr>
+<tr>
+<td class="docs"><p>Slices can be composed into multi-dimensional data
+structures. The length of the inner slices can
+vary, unlike with multi-dimensional arrays.
+</p></td><td class="code "><pre><code class="language-go">&nbsp;&nbsp;&nbsp;&nbsp;twoD := make([][]int, 3)
+&nbsp;&nbsp;&nbsp;&nbsp;for i := 0; i < 3; i++ {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;innerLen := i + 1
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;twoD[i] = make([]int, innerLen)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for j := 0; j < innerLen; j++ {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;twoD[i][j] = i + j
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;fmt.Println("2d: ", twoD)
+}
+</code></pre></td> </tr>
+</table>
+
+    <script src="./prism.js"></script>
+</body>
+
+</html>
