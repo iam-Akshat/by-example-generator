@@ -7,6 +7,7 @@ const MAIN_CONTENT_FOLDER = "content";
 
 const ERRORS = {
   NO_CONTENT_FOLDER: `Main content folder does not exist. Please create a folder named ${MAIN_CONTENT_FOLDER} in the root directory.`,
+  NO_INDEX_FILE: `No index file found. Please make sure there is an index.md file in the content folder.`,
 }
 
 const ERROR_MESSAGES = Object.values(ERRORS);
@@ -73,17 +74,37 @@ const makeChapterFileObject = (
   return chapterFileObject;
 };
 
+const getFilePathWithName = (dirPath, fileName) => {
+  const files = fs.readdirSync(dirPath);
+  const filePaths = [];
+  files.forEach((file) => {
+    if (file === fileName) {
+      filePaths.push(`${dirPath}/${file}`);
+    }
+  });
+
+  if(filePaths.length === 0) {
+    throw new Error(ERRORS.NO_INDEX_FILE);
+  }
+
+  return filePaths[0];
+};
+
 const makeContentTree = (dirPath = process.cwd()) => {
   try {
     const chapterNames = getChapterNames(path.join(dirPath, MAIN_CONTENT_FOLDER));
     const chapterFileObject = makeChapterFileObject(chapterNames, dirPath);
+    chapterFileObject["index"] = getFilePathWithName(path.join(dirPath, MAIN_CONTENT_FOLDER), "index.md");
+    chapterFileObject["footer"] = getFilePathWithName(path.join(dirPath, MAIN_CONTENT_FOLDER), "footer.md");
     return chapterFileObject;
   } catch (error) {
-    if(!ERROR_MESSAGES.includes(error.message)) {
+    if (!ERROR_MESSAGES.includes(error.message)) {
       throw new Error(error.message);
+    } else {
+      console.log(error.message);
     }
   }
- 
+
 };
 
 module.exports = { makeContentTree };
